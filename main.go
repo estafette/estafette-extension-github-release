@@ -25,6 +25,7 @@ var (
 	gitRevision    = kingpin.Flag("git-revision", "The hash of the revision to set build status for.").Envar("ESTAFETTE_GIT_REVISION").Required().String()
 	releaseVersion = kingpin.Flag("version-param", "The version of the release set as a parameter.").Envar("ESTAFETTE_EXTENSION_VERSION").String()
 	buildVersion   = kingpin.Flag("build-version", "The version of the pipeline.").Envar("ESTAFETTE_BUILD_VERSION").String()
+	closeMilestone = kingpin.Flag("close-milestone-param", "If set close a milestone when found.").Envar("ESTAFETTE_EXTENSION_CLOSE_MILESTONE").Bool()
 )
 
 func main() {
@@ -70,7 +71,7 @@ func main() {
 	}
 
 	// close milestone
-	if milestone != nil {
+	if milestone != nil && *closeMilestone {
 		err = githubAPIClient.CloseMilestone(*milestone)
 		if err != nil {
 			log.Fatalf("Closing milestone with id %v failed: %v", milestone.ID, err)
