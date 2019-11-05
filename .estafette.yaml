@@ -1,0 +1,115 @@
+builder:
+  track: dev
+
+labels:
+  app-group: estafette-ci-extensions
+  team: estafette-team
+  language: golang
+
+version:
+  semver:
+    major: 0
+    minor: 1
+
+stages:
+  build:
+    image: golang:1.13.4-alpine3.10
+    env:
+      CGO_ENABLED: 0
+      GOOS: linux
+    commands:
+    - go test ./...
+    - go build -a -installsuffix cgo -ldflags "-X main.version=${ESTAFETTE_BUILD_VERSION} -X main.revision=${ESTAFETTE_GIT_REVISION} -X main.branch=${ESTAFETTE_GIT_BRANCH} -X main.buildDate=${ESTAFETTE_BUILD_DATETIME}" -o ./publish/${ESTAFETTE_GIT_NAME} .
+
+  bake:
+    image: extensions/docker:dev
+    action: build
+    inline: |
+      FROM scratch
+
+      LABEL maintainer="estafette.io" \
+            description="The ${ESTAFETTE_GIT_NAME} component is an Estafette extension to create a release in Github"
+
+      COPY ca-certificates.crt /etc/ssl/certs/
+      COPY ${ESTAFETTE_GIT_NAME} /
+
+      ENTRYPOINT ["/${ESTAFETTE_GIT_NAME}"]
+    container: github-release
+    repositories:
+    - extensions
+    path: ./publish
+    copy:
+    - /etc/ssl/certs/ca-certificates.crt
+
+  push-to-docker-hub:
+    image: extensions/docker:dev
+    action: push
+    container: github-release
+    repositories:
+    - extensions
+
+  slack-notify:
+    image: extensions/slack-build-status:stable
+    workspace: estafette
+    channels:
+    - '#build-status'
+    when:
+      status == 'succeeded' ||
+      status == 'failed'
+
+releases:
+  dev:
+    triggers:
+    - pipeline:
+        name: self
+        branch: .+
+    stages:
+      tag-container-image:
+        image: extensions/docker:dev
+        action: tag
+        container: github-release
+        repositories:
+        - extensions
+        tags:
+        - dev
+
+  beta:
+    stages:
+      tag-container-image:
+        image: extensions/docker:dev
+        action: tag
+        container: github-release
+        repositories:
+        - extensions
+        tags:
+        - beta
+
+      slack-notify:
+        image: extensions/slack-build-status:stable
+        workspace: estafette
+        channels:
+        - '#build-status'
+        when:
+          status == 'succeeded' ||
+          status == 'failed'
+
+  stable:
+    stages:
+      tag-container-image:
+        image: extensions/docker:dev
+        action: tag
+        container: github-release
+        repositories:
+        - extensions
+        tags:
+        - stable
+        - latest
+
+      slack-notify:
+        image: extensions/slack-build-status:stable
+        workspace: estafette
+        channels:
+        - '#build-status'
+        when:
+          status == 'succeeded' ||
+          status == 'failed'
