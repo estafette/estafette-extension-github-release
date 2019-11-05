@@ -37,3 +37,14 @@ type githubUser struct {
 	ID      int    `json:"id"`
 	HTMLURL string `json:"html_url"`
 }
+
+type githubPullRequest struct {
+	ID        int              `json:"id"`
+	Number    int              `json:"number"`
+	Title     string           `json:"title"`
+	URL       string           `json:"url"`
+	HTMLURL   string           `json:"html_url"`
+	State     string           `json:"state"`
+	Assignee  *githubUser      `json:"assignee"`
+	Milestone *githubMilestone `json:"milestone"`
+}

@@ -4,12 +4,12 @@ import (
 	"fmt"
 )
 
-func formatReleaseDescription(milestone *githubMilestone, issues []*githubIssue) string {
+func formatReleaseDescription(milestone *githubMilestone, issues []*githubIssue, pullRequests []*githubPullRequest) string {
 
 	response := ""
 	if milestone != nil {
 		response += fmt.Sprintf("[Milestone %v](%v)\n", milestone.Title, milestone.HTMLURL)
-		if len(issues) > 0 {
+		if len(issues) > 0 || len(pullRequests) > 0 {
 			response += "\n"
 		}
 	}
@@ -26,7 +26,20 @@ func formatReleaseDescription(milestone *githubMilestone, issues []*githubIssue)
 		response += "\n"
 	}
 
-	// assert.Equal(t, "* Add official helm chart. [#12](https://github.com/estafette/estafette-cloudflare-dns/issues/12), [@JorritSalverda](https://github.com/JorritSalverda)", response)
+	if len(pullRequests) > 0 {
+		if len(issues) > 0 {
+			response += "\n"
+		}
+		response += "**Resolved pull requests**\n"
+	}
+
+	for _, i := range pullRequests {
+		response += fmt.Sprintf("* %v. [#%v](%v)", i.Title, i.Number, i.HTMLURL)
+		if i.Assignee != nil {
+			response += fmt.Sprintf(", [@%v](%v)", i.Assignee.Login, i.Assignee.HTMLURL)
+		}
+		response += "\n"
+	}
 
 	return response
 }

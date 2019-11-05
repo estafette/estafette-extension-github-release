@@ -17,7 +17,8 @@ type GithubAPIClient interface {
 	GetMilestoneByVersion(repoOwner, repoName, version string) (ms *githubMilestone, err error)
 	CloseMilestone(milestone githubMilestone) (err error)
 	GetIssuesForMilestone(repoOwner, repoName string, milestone githubMilestone) (issues []*githubIssue, err error)
-	CreateRelease(repoOwner, repoName, gitRevision, version string, milestone *githubMilestone, issues []*githubIssue) (err error)
+	GetPullRequestsForMilestone(repoOwner, repoName string, milestone githubMilestone) (pullRequests []*githubPullRequest, err error)
+	CreateRelease(repoOwner, repoName, gitRevision, version string, milestone *githubMilestone, issues []*githubIssue, pullRequests []*githubPullRequest) (err error)
 }
 
 type githubAPIClientImpl struct {
@@ -83,7 +84,31 @@ func (gh *githubAPIClientImpl) GetIssuesForMilestone(repoOwner, repoName string,
 	return issues, nil
 }
 
-func (gh *githubAPIClientImpl) CreateRelease(repoOwner, repoName, gitRevision, version string, milestone *githubMilestone, issues []*githubIssue) (err error) {
+func (gh *githubAPIClientImpl) GetPullRequestsForMilestone(repoOwner, repoName string, milestone githubMilestone) (pullRequests []*githubPullRequest, err error) {
+
+	// https://developer.github.com/v3/pulls/#list-pull-requests
+	log.Printf("Retrieving issues for milestone with id %v", milestone.ID)
+
+	body, err := gh.callGithubAPI("GET", fmt.Sprintf("https://api.github.com/repos/%v/%v/pulls?state=closed", repoOwner, repoName), nil)
+
+	var unfilteredPullRequests []*githubPullRequest
+	err = json.Unmarshal(body, &unfilteredPullRequests)
+	if err != nil {
+		return
+	}
+
+	// filter pull request for different milestone
+	pullRequests = make([]*githubPullRequest, 0)
+	for _, pr := range unfilteredPullRequests {
+		if pr.Milestone != nil && pr.Milestone.ID == milestone.ID {
+			pullRequests = append(pullRequests, pr)
+		}
+	}
+
+	return pullRequests, nil
+}
+
+func (gh *githubAPIClientImpl) CreateRelease(repoOwner, repoName, gitRevision, version string, milestone *githubMilestone, issues []*githubIssue, pullRequests []*githubPullRequest) (err error) {
 
 	// https://developer.github.com/v3/repos/releases/
 	log.Printf("Creating release %v", version)
@@ -92,7 +117,7 @@ func (gh *githubAPIClientImpl) CreateRelease(repoOwner, repoName, gitRevision, v
 		TagName:         version,
 		TargetCommitish: gitRevision,
 		Name:            version,
-		Body:            formatReleaseDescription(milestone, issues),
+		Body:            formatReleaseDescription(milestone, issues, pullRequests),
 		Draft:           false,
 		PreRelease:      false,
 	}
