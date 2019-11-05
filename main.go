@@ -64,8 +64,17 @@ func main() {
 		log.Printf("Retrieving milestone with title %v failed, continuing: %v", version, err)
 	}
 
+	// retrieve issues for mileston
+	issues := []*githubIssue{}
+	if milestone != nil {
+		issues, err = githubAPIClient.GetIssuesForMilestone(*gitRepoOwner, *gitRepoName, *milestone)
+		if err != nil {
+			log.Fatalf("Retrieving issues for milestone with id %v failed: %v", milestone.ID, err)
+		}
+	}
+
 	// create release
-	err = githubAPIClient.CreateRelease(*gitRepoOwner, *gitRepoName, *gitRevision, version, milestone)
+	err = githubAPIClient.CreateRelease(*gitRepoOwner, *gitRepoName, *gitRevision, version, milestone, issues)
 	if err != nil {
 		log.Fatalf("Creating release with name %v failed: %v", version, err)
 	}

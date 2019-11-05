@@ -16,7 +16,8 @@ import (
 type GithubAPIClient interface {
 	GetMilestoneByVersion(repoOwner, repoName, version string) (ms *githubMilestone, err error)
 	CloseMilestone(milestone githubMilestone) (err error)
-	CreateRelease(repoOwner, repoName, gitRevision, version string, milestone *githubMilestone) (err error)
+	GetIssuesForMilestone(repoOwner, repoName string, milestone githubMilestone) (issues []*githubIssue, err error)
+	CreateRelease(repoOwner, repoName, gitRevision, version string, milestone *githubMilestone, issues []*githubIssue) (err error)
 }
 
 type githubAPIClientImpl struct {
@@ -27,27 +28,6 @@ func newGithubAPIClient(accessToken string) GithubAPIClient {
 	return &githubAPIClientImpl{
 		accessToken: accessToken,
 	}
-}
-
-type githubMilestone struct {
-	ID           int    `json:"id"`
-	Title        string `json:"title"`
-	URL          string `json:"url"`
-	HTMLURL      string `json:"html_url"`
-	State        string `json:"state"`
-	OpenIssues   int    `json:"open_issues"`
-	ClosedIssues int    `json:"closed_issues"`
-	Description  string `json:"description"`
-	DueOn        string `json:"due_on"`
-}
-
-type githubRelease struct {
-	TagName         string `json:"tag_name"`
-	TargetCommitish string `json:"target_commitish"`
-	Name            string `json:"name"`
-	Body            string `json:"body"`
-	Draft           bool   `json:"draft"`
-	PreRelease      bool   `json:"prerelease"`
 }
 
 func (gh *githubAPIClientImpl) GetMilestoneByVersion(repoOwner, repoName, version string) (ms *githubMilestone, err error) {
@@ -88,7 +68,22 @@ func (gh *githubAPIClientImpl) CloseMilestone(milestone githubMilestone) (err er
 	return nil
 }
 
-func (gh *githubAPIClientImpl) CreateRelease(repoOwner, repoName, gitRevision, version string, milestone *githubMilestone) (err error) {
+func (gh *githubAPIClientImpl) GetIssuesForMilestone(repoOwner, repoName string, milestone githubMilestone) (issues []*githubIssue, err error) {
+
+	// https://developer.github.com/v3/issues/#list-issues-for-a-repository
+	log.Printf("Retrieving issues for milestone with id %v", milestone.ID)
+
+	body, err := gh.callGithubAPI("GET", fmt.Sprintf("https://api.github.com/repos/%v/%v/issues?state=closed&milestone=%v", repoOwner, repoName, milestone.Number), nil)
+
+	err = json.Unmarshal(body, &issues)
+	if err != nil {
+		return
+	}
+
+	return issues, nil
+}
+
+func (gh *githubAPIClientImpl) CreateRelease(repoOwner, repoName, gitRevision, version string, milestone *githubMilestone, issues []*githubIssue) (err error) {
 
 	// https://developer.github.com/v3/repos/releases/
 	log.Printf("Creating release %v", version)
@@ -97,7 +92,7 @@ func (gh *githubAPIClientImpl) CreateRelease(repoOwner, repoName, gitRevision, v
 		TagName:         version,
 		TargetCommitish: gitRevision,
 		Name:            version,
-		Body:            "",
+		Body:            formatReleaseDescription(milestone, issues),
 		Draft:           false,
 		PreRelease:      false,
 	}
@@ -109,7 +104,6 @@ func (gh *githubAPIClientImpl) CreateRelease(repoOwner, repoName, gitRevision, v
 	}
 
 	return nil
-
 }
 
 func (gh *githubAPIClientImpl) callGithubAPI(method, url string, params interface{}) (body []byte, err error) {
