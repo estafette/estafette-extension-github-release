@@ -93,5 +93,5 @@ func main() {
 		}
 	}
 
-	log.Println("Finished estafette-extension-github-release...")
+	log.Println("\nFinished estafette-extension-github-release...")
 }
