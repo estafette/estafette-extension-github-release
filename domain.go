@@ -13,6 +13,13 @@ type githubMilestone struct {
 	DueOn        string `json:"due_on"`
 }
 
+type githubMilestoneUpdateRequest struct {
+	Title       string `json:"title"`
+	State       string `json:"state"`
+	Description string `json:"description"`
+	DueOn       string `json:"due_on"`
+}
+
 type githubRelease struct {
 	TagName         string `json:"tag_name"`
 	TargetCommitish string `json:"target_commitish"`

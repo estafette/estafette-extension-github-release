@@ -61,25 +61,22 @@ func main() {
 	// get milestone by version
 	milestone, err := githubAPIClient.GetMilestoneByVersion(*gitRepoOwner, *gitRepoName, version)
 	if err != nil {
-		log.Printf("Retrieving milestone with title %v failed, continuing: %v", version, err)
+		log.Fatalf("Retrieving milestone failed. Please create a milestone with title %v if it does not exist. %v", version, err)
+	}
+	if milestone == nil {
+		log.Fatalf("Milestone does not exist. Please create a milestone with title %v and retry", version)
 	}
 
 	// retrieve issues for milestone
-	issues := []*githubIssue{}
-	if milestone != nil {
-		issues, err = githubAPIClient.GetIssuesForMilestone(*gitRepoOwner, *gitRepoName, *milestone)
-		if err != nil {
-			log.Fatalf("Retrieving issues for milestone #%v failed: %v", milestone.Number, err)
-		}
+	issues, err := githubAPIClient.GetIssuesForMilestone(*gitRepoOwner, *gitRepoName, *milestone)
+	if err != nil {
+		log.Fatalf("Retrieving issues for milestone #%v failed: %v", milestone.Number, err)
 	}
 
 	// retrieve pull requests for milestone
-	pullRequests := []*githubPullRequest{}
-	if milestone != nil {
-		pullRequests, err = githubAPIClient.GetPullRequestsForMilestone(*gitRepoOwner, *gitRepoName, *milestone)
-		if err != nil {
-			log.Fatalf("Retrieving pull requests for milestone #%v failed: %v", milestone.Number, err)
-		}
+	pullRequests, err := githubAPIClient.GetPullRequestsForMilestone(*gitRepoOwner, *gitRepoName, *milestone)
+	if err != nil {
+		log.Fatalf("Retrieving pull requests for milestone #%v failed: %v", milestone.Number, err)
 	}
 
 	// create release
@@ -89,7 +86,7 @@ func main() {
 	}
 
 	// close milestone
-	if milestone != nil && *closeMilestone {
+	if *closeMilestone {
 		err = githubAPIClient.CloseMilestone(*gitRepoOwner, *gitRepoName, *milestone)
 		if err != nil {
 			log.Fatalf("Closing milestone #%v failed: %v", milestone.Number, err)

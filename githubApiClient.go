@@ -127,9 +127,14 @@ func (gh *githubAPIClientImpl) CloseMilestone(repoOwner, repoName string, milest
 	// https://developer.github.com/v3/issues/milestones/#update-a-milestone
 	log.Printf("Closing milestone #%v...", milestone.Number)
 
-	milestone.State = "closed"
+	updateRequest := githubMilestoneUpdateRequest{
+		Title:       milestone.Title,
+		State:       "closed",
+		Description: milestone.Description,
+		DueOn:       milestone.DueOn,
+	}
 
-	_, err = gh.callGithubAPI("PATCH", fmt.Sprintf("https://api.github.com/repos/%v/%v/milestones/%v", repoOwner, repoName, milestone.Number), []int{http.StatusOK}, milestone)
+	_, err = gh.callGithubAPI("PATCH", fmt.Sprintf("https://api.github.com/repos/%v/%v/milestones/%v", repoOwner, repoName, milestone.Number), []int{http.StatusOK}, updateRequest)
 
 	if err != nil {
 		return
