@@ -16,8 +16,8 @@ type githubMilestone struct {
 type githubMilestoneUpdateRequest struct {
 	Title       string `json:"title"`
 	State       string `json:"state"`
-	Description string `json:"description"`
-	DueOn       string `json:"due_on"`
+	Description string `json:"description,omitempty"`
+	DueOn       string `json:"due_on,omitempty"`
 }
 
 type githubRelease struct {
