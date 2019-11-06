@@ -36,7 +36,7 @@ func (gh *githubAPIClientImpl) GetMilestoneByVersion(repoOwner, repoName, versio
 	// https://developer.github.com/v3/issues/milestones/#list-milestones-for-a-repository
 	log.Printf("Retrieving milestone with title %v...", version)
 
-	body, err := gh.callGithubAPI("GET", fmt.Sprintf("https://api.github.com/repos/%v/%v/milestones?state=open", repoOwner, repoName), nil)
+	body, err := gh.callGithubAPI("GET", fmt.Sprintf("https://api.github.com/repos/%v/%v/milestones?state=open", repoOwner, repoName), []int{http.StatusOK}, nil)
 
 	var milestones []*githubMilestone
 	err = json.Unmarshal(body, &milestones)
@@ -59,7 +59,7 @@ func (gh *githubAPIClientImpl) GetIssuesForMilestone(repoOwner, repoName string,
 	// https://developer.github.com/v3/issues/#list-issues-for-a-repository
 	log.Printf("Retrieving issues for milestone #%v...", milestone.Number)
 
-	body, err := gh.callGithubAPI("GET", fmt.Sprintf("https://api.github.com/repos/%v/%v/issues?state=closed&milestone=%v", repoOwner, repoName, milestone.Number), nil)
+	body, err := gh.callGithubAPI("GET", fmt.Sprintf("https://api.github.com/repos/%v/%v/issues?state=closed&milestone=%v", repoOwner, repoName, milestone.Number), []int{http.StatusOK}, nil)
 
 	err = json.Unmarshal(body, &issues)
 	if err != nil {
@@ -76,7 +76,7 @@ func (gh *githubAPIClientImpl) GetPullRequestsForMilestone(repoOwner, repoName s
 	// https://developer.github.com/v3/pulls/#list-pull-requests
 	log.Printf("Retrieving pull requests for milestone #%v...", milestone.Number)
 
-	body, err := gh.callGithubAPI("GET", fmt.Sprintf("https://api.github.com/repos/%v/%v/pulls?state=closed", repoOwner, repoName), nil)
+	body, err := gh.callGithubAPI("GET", fmt.Sprintf("https://api.github.com/repos/%v/%v/pulls?state=closed", repoOwner, repoName), []int{http.StatusOK}, nil)
 
 	var unfilteredPullRequests []*githubPullRequest
 	err = json.Unmarshal(body, &unfilteredPullRequests)
@@ -111,7 +111,7 @@ func (gh *githubAPIClientImpl) CreateRelease(repoOwner, repoName, gitRevision, v
 		PreRelease:      false,
 	}
 
-	_, err = gh.callGithubAPI("POST", fmt.Sprintf("https://api.github.com/repos/%v/%v/releases", repoOwner, repoName), release)
+	_, err = gh.callGithubAPI("POST", fmt.Sprintf("https://api.github.com/repos/%v/%v/releases", repoOwner, repoName), []int{http.StatusCreated}, release)
 
 	if err != nil {
 		return
@@ -129,7 +129,7 @@ func (gh *githubAPIClientImpl) CloseMilestone(repoOwner, repoName string, milest
 
 	milestone.State = "closed"
 
-	_, err = gh.callGithubAPI("PATCH", fmt.Sprintf("https://api.github.com/repos/%v/%v/milestones/%v", repoOwner, repoName, milestone.Number), milestone)
+	_, err = gh.callGithubAPI("PATCH", fmt.Sprintf("https://api.github.com/repos/%v/%v/milestones/%v", repoOwner, repoName, milestone.Number), []int{http.StatusOK}, milestone)
 
 	if err != nil {
 		return
@@ -140,7 +140,7 @@ func (gh *githubAPIClientImpl) CloseMilestone(repoOwner, repoName string, milest
 	return nil
 }
 
-func (gh *githubAPIClientImpl) callGithubAPI(method, url string, params interface{}) (body []byte, err error) {
+func (gh *githubAPIClientImpl) callGithubAPI(method, url string, validStatusCodes []int, params interface{}) (body []byte, err error) {
 
 	// convert params to json if they're present
 	var requestBody io.Reader
@@ -177,6 +177,16 @@ func (gh *githubAPIClientImpl) callGithubAPI(method, url string, params interfac
 	body, err = ioutil.ReadAll(response.Body)
 	if err != nil {
 		return
+	}
+
+	hasValidStatusCode := false
+	for _, sc := range validStatusCodes {
+		if response.StatusCode == sc {
+			hasValidStatusCode = true
+		}
+	}
+	if !hasValidStatusCode {
+		return body, fmt.Errorf("Status code %v for '%v' Github api call is not one of the valid status codes %v for this request. Body: %v", response.StatusCode, url, validStatusCodes, string(body))
 	}
 
 	if string(body) == "" {
