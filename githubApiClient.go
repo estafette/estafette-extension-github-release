@@ -179,6 +179,11 @@ func (gh *githubAPIClientImpl) callGithubAPI(method, url string, params interfac
 		return
 	}
 
+	if string(body) == "" {
+		log.Printf("Received successful response without body for '%v' Github api call with status code %v", url, response.StatusCode)
+		return
+	}
+
 	// unmarshal json body
 	var b interface{}
 	err = json.Unmarshal(body, &b)
@@ -186,8 +191,6 @@ func (gh *githubAPIClientImpl) callGithubAPI(method, url string, params interfac
 		log.Printf("Deserializing response for '%v' Github api call failed. Body: %v. Error: %v", url, string(body), err)
 		return
 	}
-
-	// log.Printf("Received successful response for '%v' Github api call with status code %v", url, response.StatusCode)
 
 	return
 }
