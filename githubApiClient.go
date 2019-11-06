@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/sethgrid/pester"
 )
@@ -113,11 +114,13 @@ func (gh *githubAPIClientImpl) CreateRelease(repoOwner, repoName, gitRevision, v
 
 	_, err = gh.callGithubAPI("POST", fmt.Sprintf("https://api.github.com/repos/%v/%v/releases", repoOwner, repoName), []int{http.StatusCreated}, release)
 
-	if err != nil {
+	if err != nil && !strings.Contains(err.Error(), "already_exists") {
 		return
+	} else if err != nil && strings.Contains(err.Error(), "already_exists") {
+		log.Printf("Release already exist, skipping")
+	} else {
+		log.Printf("Created release")
 	}
-
-	log.Printf("Created release")
 
 	return nil
 }
