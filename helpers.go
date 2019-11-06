@@ -7,17 +7,11 @@ import (
 func formatReleaseDescription(milestone *githubMilestone, issues []*githubIssue, pullRequests []*githubPullRequest) string {
 
 	response := ""
-	if milestone != nil {
-		response += fmt.Sprintf("[Milestone %v](%v)\n", milestone.Title, milestone.HTMLURL)
-		if len(issues) > 0 || len(pullRequests) > 0 {
-			response += "\n"
-		}
-	}
 
+	// list resolved issues
 	if len(issues) > 0 {
-		response += "**Resolved issues**\n"
+		response += fmt.Sprintf("**Resolved issues (%v)**\n", len(issues))
 	}
-
 	for _, i := range issues {
 		response += fmt.Sprintf("* %v. [#%v](%v)", i.Title, i.Number, i.HTMLURL)
 		if i.Assignee != nil {
@@ -26,19 +20,29 @@ func formatReleaseDescription(milestone *githubMilestone, issues []*githubIssue,
 		response += "\n"
 	}
 
-	if len(pullRequests) > 0 {
-		if len(issues) > 0 {
-			response += "\n"
-		}
-		response += "**Resolved pull requests**\n"
+	if len(issues) > 0 && len(pullRequests) > 0 {
+		response += "\n"
 	}
 
+	// list resolved pull requests
+	if len(pullRequests) > 0 {
+		response += fmt.Sprintf("**Resolved pull requests (%v)**\n", len(pullRequests))
+	}
 	for _, i := range pullRequests {
 		response += fmt.Sprintf("* %v. [#%v](%v)", i.Title, i.Number, i.HTMLURL)
 		if i.Assignee != nil {
 			response += fmt.Sprintf(", [@%v](%v)", i.Assignee.Login, i.Assignee.HTMLURL)
 		}
 		response += "\n"
+	}
+
+	if milestone != nil && (len(issues) > 0 || len(pullRequests) > 0) {
+		response += "\n"
+	}
+
+	// link to milestone
+	if milestone != nil {
+		response += fmt.Sprintf("See [milestone %v](%v) for more details.", milestone.Title, milestone.HTMLURL)
 	}
 
 	return response

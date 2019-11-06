@@ -69,7 +69,7 @@ func main() {
 	if milestone != nil {
 		issues, err = githubAPIClient.GetIssuesForMilestone(*gitRepoOwner, *gitRepoName, *milestone)
 		if err != nil {
-			log.Fatalf("Retrieving issues for milestone with id %v failed: %v", milestone.ID, err)
+			log.Fatalf("Retrieving issues for milestone #%v failed: %v", milestone.Number, err)
 		}
 	}
 
@@ -78,7 +78,7 @@ func main() {
 	if milestone != nil {
 		pullRequests, err = githubAPIClient.GetPullRequestsForMilestone(*gitRepoOwner, *gitRepoName, *milestone)
 		if err != nil {
-			log.Fatalf("Retrieving pull requests for milestone with id %v failed: %v", milestone.ID, err)
+			log.Fatalf("Retrieving pull requests for milestone #%v failed: %v", milestone.Number, err)
 		}
 	}
 
@@ -90,9 +90,9 @@ func main() {
 
 	// close milestone
 	if milestone != nil && *closeMilestone {
-		err = githubAPIClient.CloseMilestone(*milestone)
+		err = githubAPIClient.CloseMilestone(*gitRepoOwner, *gitRepoName, *milestone)
 		if err != nil {
-			log.Fatalf("Closing milestone with id %v failed: %v", milestone.ID, err)
+			log.Fatalf("Closing milestone #%v failed: %v", milestone.Number, err)
 		}
 	}
 
