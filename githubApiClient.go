@@ -194,11 +194,11 @@ func (gh *githubAPIClientImpl) callGithubAPI(method, url string, validStatusCode
 		}
 	}
 	if !hasValidStatusCode {
-		return body, fmt.Errorf("Status code %v for '%v' Github api call is not one of the valid status codes %v for this request. Body: %v", response.StatusCode, url, validStatusCodes, string(body))
+		return body, fmt.Errorf("Status code %v for '%v %v' is not one of the valid status codes %v for this request. Body: %v", response.StatusCode, method, url, validStatusCodes, string(body))
 	}
 
 	if string(body) == "" {
-		log.Printf("Received successful response without body for '%v' Github api call with status code %v", url, response.StatusCode)
+		log.Printf("Received successful response without body for '%v %v' with status code %v", method, url, response.StatusCode)
 		return
 	}
 
