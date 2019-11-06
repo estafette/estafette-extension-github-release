@@ -21,7 +21,7 @@ var (
 	// flags
 	apiTokenJSON   = kingpin.Flag("credentials", "Github api token credentials configured at the CI server, passed in to this trusted extension.").Envar("ESTAFETTE_CREDENTIALS_GITHUB_API_TOKEN").Required().String()
 	gitRepoOwner   = kingpin.Flag("git-repo-owner", "The owner of the Github repository.").Envar("ESTAFETTE_GIT_OWNER").Required().String()
-	gitRepoName    = kingpin.Flag("git-repo-owner", "The name of the Github repository.").Envar("ESTAFETTE_GIT_NAME").Required().String()
+	gitRepoName    = kingpin.Flag("git-repo-name", "The name of the Github repository.").Envar("ESTAFETTE_GIT_NAME").Required().String()
 	gitRevision    = kingpin.Flag("git-revision", "The hash of the revision to set build status for.").Envar("ESTAFETTE_GIT_REVISION").Required().String()
 	releaseVersion = kingpin.Flag("version-param", "The version of the release set as a parameter.").Envar("ESTAFETTE_EXTENSION_VERSION").String()
 	buildVersion   = kingpin.Flag("build-version", "The version of the pipeline.").Envar("ESTAFETTE_BUILD_VERSION").String()
