@@ -45,6 +45,23 @@ type githubIssuePullRequest struct {
 	HTMLURL string `json:"html_url"`
 }
 
+func (issue *githubIssue) getPullRequest(milestone *githubMilestone) *githubPullRequest {
+	if issue.PullRequest == nil {
+		return nil
+	}
+
+	return &githubPullRequest{
+		ID:        issue.ID, // Be aware that the id of a pull request returned from "Issues" endpoints will be an issue id. To find out the pull request id, use the "List pull requests" endpoint.
+		Number:    issue.Number,
+		Title:     issue.Title,
+		URL:       issue.PullRequest.URL,
+		HTMLURL:   issue.PullRequest.HTMLURL,
+		State:     issue.State,
+		Assignee:  issue.Assignee,
+		Milestone: milestone,
+	}
+}
+
 type githubUser struct {
 	Login   string `json:"login"`
 	ID      int    `json:"id"`
