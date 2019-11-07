@@ -61,16 +61,16 @@ func (gh *githubAPIClientImpl) GetIssuesAndPullRequestsForMilestone(repoOwner, r
 
 	body, err := gh.callGithubAPI("GET", fmt.Sprintf("https://api.github.com/repos/%v/%v/issues?state=closed&milestone=%v", repoOwner, repoName, milestone.Number), []int{http.StatusOK}, nil)
 
-	var unfilteredIssuesAndPullRequests []*githubIssue
-	err = json.Unmarshal(body, &unfilteredIssuesAndPullRequests)
+	var issuesAndPullRequests []*githubIssue
+	err = json.Unmarshal(body, &issuesAndPullRequests)
 	if err != nil {
 		return
 	}
 
-	// filter pull requests from returned issues
+	// separate pull requests from returned issues
 	issues = make([]*githubIssue, 0)
 	pullRequests = make([]*githubPullRequest, 0)
-	for _, i := range unfilteredIssuesAndPullRequests {
+	for _, i := range issuesAndPullRequests {
 		if i.PullRequest != nil {
 			pullRequests = append(pullRequests, i.PullRequest)
 		} else {
