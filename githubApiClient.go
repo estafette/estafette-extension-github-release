@@ -92,10 +92,13 @@ func (gh *githubAPIClientImpl) CreateRelease(repoOwner, repoName, gitRevision, v
 	// https://developer.github.com/v3/repos/releases/#create-a-release
 	log.Printf("\nCreating release %v...", version)
 
+	tagName := fmt.Sprintf("v%v", version)
+	releaseName := fmt.Sprintf("Release v%v", version)
+
 	release := githubRelease{
-		TagName:         version,
+		TagName:         tagName,
 		TargetCommitish: gitRevision,
-		Name:            version,
+		Name:            releaseName,
 		Body:            formatReleaseDescription(milestone, issues, pullRequests),
 		Draft:           false,
 		PreRelease:      false,
