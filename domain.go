@@ -30,13 +30,14 @@ type githubRelease struct {
 }
 
 type githubIssue struct {
-	ID       int         `json:"id"`
-	Number   int         `json:"number"`
-	Title    string      `json:"title"`
-	URL      string      `json:"url"`
-	HTMLURL  string      `json:"html_url"`
-	State    string      `json:"state"`
-	Assignee *githubUser `json:"assignee"`
+	ID          int                `json:"id"`
+	Number      int                `json:"number"`
+	Title       string             `json:"title"`
+	URL         string             `json:"url"`
+	HTMLURL     string             `json:"html_url"`
+	State       string             `json:"state"`
+	Assignee    *githubUser        `json:"assignee"`
+	PullRequest *githubPullRequest `json:"pull_request"`
 }
 
 type githubUser struct {

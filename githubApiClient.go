@@ -16,8 +16,7 @@ import (
 // GithubAPIClient allows to communicate with the Github api
 type GithubAPIClient interface {
 	GetMilestoneByVersion(repoOwner, repoName, version string) (ms *githubMilestone, err error)
-	GetIssuesForMilestone(repoOwner, repoName string, milestone githubMilestone) (issues []*githubIssue, err error)
-	GetPullRequestsForMilestone(repoOwner, repoName string, milestone githubMilestone) (pullRequests []*githubPullRequest, err error)
+	GetIssuesAndPullRequestsForMilestone(repoOwner, repoName string, milestone githubMilestone) (issues []*githubIssue, pullRequests []*githubPullRequest, err error)
 	CreateRelease(repoOwner, repoName, gitRevision, version string, milestone *githubMilestone, issues []*githubIssue, pullRequests []*githubPullRequest) (err error)
 	CloseMilestone(repoOwner, repoName string, milestone githubMilestone) (err error)
 }
@@ -55,47 +54,33 @@ func (gh *githubAPIClientImpl) GetMilestoneByVersion(repoOwner, repoName, versio
 	return nil, fmt.Errorf("No milestone with title %v could be found", version)
 }
 
-func (gh *githubAPIClientImpl) GetIssuesForMilestone(repoOwner, repoName string, milestone githubMilestone) (issues []*githubIssue, err error) {
+func (gh *githubAPIClientImpl) GetIssuesAndPullRequestsForMilestone(repoOwner, repoName string, milestone githubMilestone) (issues []*githubIssue, pullRequests []*githubPullRequest, err error) {
 
 	// https://developer.github.com/v3/issues/#list-issues-for-a-repository
 	log.Printf("\nRetrieving issues for milestone #%v...", milestone.Number)
 
 	body, err := gh.callGithubAPI("GET", fmt.Sprintf("https://api.github.com/repos/%v/%v/issues?state=closed&milestone=%v", repoOwner, repoName, milestone.Number), []int{http.StatusOK}, nil)
 
-	err = json.Unmarshal(body, &issues)
+	var unfilteredIssuesAndPullRequests []*githubIssue
+	err = json.Unmarshal(body, &unfilteredIssuesAndPullRequests)
 	if err != nil {
 		return
 	}
 
-	log.Printf("Retrieved %v issues", len(issues))
-
-	return issues, nil
-}
-
-func (gh *githubAPIClientImpl) GetPullRequestsForMilestone(repoOwner, repoName string, milestone githubMilestone) (pullRequests []*githubPullRequest, err error) {
-
-	// https://developer.github.com/v3/pulls/#list-pull-requests
-	log.Printf("\nRetrieving pull requests for milestone #%v...", milestone.Number)
-
-	body, err := gh.callGithubAPI("GET", fmt.Sprintf("https://api.github.com/repos/%v/%v/pulls?state=closed", repoOwner, repoName), []int{http.StatusOK}, nil)
-
-	var unfilteredPullRequests []*githubPullRequest
-	err = json.Unmarshal(body, &unfilteredPullRequests)
-	if err != nil {
-		return
-	}
-
-	// filter pull request for different milestone
+	// filter pull requests from returned issues
+	issues = make([]*githubIssue, 0)
 	pullRequests = make([]*githubPullRequest, 0)
-	for _, pr := range unfilteredPullRequests {
-		if pr.Milestone != nil && pr.Milestone.ID == milestone.ID {
-			pullRequests = append(pullRequests, pr)
+	for _, i := range unfilteredIssuesAndPullRequests {
+		if i.PullRequest != nil {
+			pullRequests = append(pullRequests, i.PullRequest)
+		} else {
+			issues = append(issues, i)
 		}
 	}
 
-	log.Printf("Retrieved %v pull requests", len(pullRequests))
+	log.Printf("Retrieved %v issues and %v pull requests", len(issues), len(pullRequests))
 
-	return pullRequests, nil
+	return issues, pullRequests, nil
 }
 
 func (gh *githubAPIClientImpl) CreateRelease(repoOwner, repoName, gitRevision, version string, milestone *githubMilestone, issues []*githubIssue, pullRequests []*githubPullRequest) (err error) {
