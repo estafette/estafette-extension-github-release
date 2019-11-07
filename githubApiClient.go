@@ -72,7 +72,17 @@ func (gh *githubAPIClientImpl) GetIssuesAndPullRequestsForMilestone(repoOwner, r
 	pullRequests = make([]*githubPullRequest, 0)
 	for _, i := range issuesAndPullRequests {
 		if i.PullRequest != nil {
-			pullRequests = append(pullRequests, i.PullRequest)
+			// convert issue into pull request
+			pullRequests = append(pullRequests, &githubPullRequest{
+				ID:        i.ID, // Be aware that the id of a pull request returned from "Issues" endpoints will be an issue id. To find out the pull request id, use the "List pull requests" endpoint.
+				Number:    i.Number,
+				Title:     i.Title,
+				URL:       i.PullRequest.URL,
+				HTMLURL:   i.PullRequest.HTMLURL,
+				State:     i.State,
+				Assignee:  i.Assignee,
+				Milestone: &milestone,
+			})
 		} else {
 			issues = append(issues, i)
 		}
