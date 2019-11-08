@@ -93,7 +93,7 @@ func (gh *githubAPIClientImpl) CreateRelease(repoOwner, repoName, gitRevision, v
 	log.Printf("\nCreating release %v...", version)
 
 	tagName := fmt.Sprintf("v%v", version)
-	releaseName := fmt.Sprintf("Release v%v", version)
+	releaseName := fmt.Sprintf("%v v%v", strings.Title(repoName), version)
 
 	release := githubRelease{
 		TagName:         tagName,
