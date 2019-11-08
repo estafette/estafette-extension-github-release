@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"runtime"
+	"strings"
 
 	"github.com/alecthomas/kingpin"
 )
@@ -25,7 +26,8 @@ var (
 	gitRevision    = kingpin.Flag("git-revision", "The hash of the revision to set build status for.").Envar("ESTAFETTE_GIT_REVISION").Required().String()
 	releaseVersion = kingpin.Flag("version-param", "The version of the release set as a parameter.").Envar("ESTAFETTE_EXTENSION_VERSION").String()
 	buildVersion   = kingpin.Flag("build-version", "The version of the pipeline.").Envar("ESTAFETTE_BUILD_VERSION").String()
-	closeMilestone = kingpin.Flag("close-milestone-param", "If set close a milestone when found.").Envar("ESTAFETTE_EXTENSION_CLOSE_MILESTONE").Bool()
+	closeMilestone = kingpin.Flag("close-milestone-param", "If set close a milestone when found.").Default("true").Envar("ESTAFETTE_EXTENSION_CLOSE_MILESTONE").Bool()
+	releaseTitle   = kingpin.Flag("title-param", "The title of your application in the release name.").Envar("ESTAFETTE_EXTENSION_TITLE").String()
 )
 
 func main() {
@@ -55,6 +57,11 @@ func main() {
 		version = *releaseVersion
 	}
 
+	title := strings.Title(*gitRepoName)
+	if releaseTitle != nil && *releaseTitle != "" {
+		title = *releaseTitle
+	}
+
 	// set build status
 	githubAPIClient := newGithubAPIClient(credentials[0].AdditionalProperties.Token)
 
@@ -74,7 +81,7 @@ func main() {
 	}
 
 	// create release
-	err = githubAPIClient.CreateRelease(*gitRepoOwner, *gitRepoName, *gitRevision, version, milestone, issues, pullRequests)
+	err = githubAPIClient.CreateRelease(*gitRepoOwner, *gitRepoName, *gitRevision, version, milestone, issues, pullRequests, title)
 	if err != nil {
 		log.Fatalf("Creating release with name %v failed: %v", version, err)
 	}

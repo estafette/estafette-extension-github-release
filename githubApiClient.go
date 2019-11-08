@@ -17,7 +17,7 @@ import (
 type GithubAPIClient interface {
 	GetMilestoneByVersion(repoOwner, repoName, version string) (ms *githubMilestone, err error)
 	GetIssuesAndPullRequestsForMilestone(repoOwner, repoName string, milestone githubMilestone) (issues []*githubIssue, pullRequests []*githubPullRequest, err error)
-	CreateRelease(repoOwner, repoName, gitRevision, version string, milestone *githubMilestone, issues []*githubIssue, pullRequests []*githubPullRequest) (err error)
+	CreateRelease(repoOwner, repoName, gitRevision, version string, milestone *githubMilestone, issues []*githubIssue, pullRequests []*githubPullRequest, title string) (err error)
 	CloseMilestone(repoOwner, repoName string, milestone githubMilestone) (err error)
 }
 
@@ -87,13 +87,13 @@ func (gh *githubAPIClientImpl) GetIssuesAndPullRequestsForMilestone(repoOwner, r
 	return issues, pullRequests, nil
 }
 
-func (gh *githubAPIClientImpl) CreateRelease(repoOwner, repoName, gitRevision, version string, milestone *githubMilestone, issues []*githubIssue, pullRequests []*githubPullRequest) (err error) {
+func (gh *githubAPIClientImpl) CreateRelease(repoOwner, repoName, gitRevision, version string, milestone *githubMilestone, issues []*githubIssue, pullRequests []*githubPullRequest, title string) (err error) {
 
 	// https://developer.github.com/v3/repos/releases/#create-a-release
 	log.Printf("\nCreating release %v...", version)
 
 	tagName := fmt.Sprintf("v%v", version)
-	releaseName := fmt.Sprintf("%v v%v", strings.Title(repoName), version)
+	releaseName := fmt.Sprintf("%v v%v", title, version)
 
 	release := githubRelease{
 		TagName:         tagName,
