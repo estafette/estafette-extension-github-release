@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 	"runtime"
-	"strings"
 
 	"github.com/alecthomas/kingpin"
 )
@@ -57,7 +56,7 @@ func main() {
 		version = *releaseVersion
 	}
 
-	title := strings.Title(*gitRepoName)
+	title := capitalize(*gitRepoName)
 	if releaseTitle != nil && *releaseTitle != "" {
 		title = *releaseTitle
 	}

@@ -221,3 +221,38 @@ func TestFormatReleaseDescription(t *testing.T) {
 		assert.Equal(t, "**Resolved issues (1)**\n* Add official helm chart. [#12](https://github.com/estafette/estafette-cloudflare-dns/issues/12), [@JorritSalverda](https://github.com/JorritSalverda)\n\n**Resolved pull requests (1)**\n* Add official helm chart. [#12](https://github.com/estafette/estafette-cloudflare-dns/pulls/12), [@JorritSalverda](https://github.com/JorritSalverda)\n\nSee [milestone 1.2.0](https://github.com/estafette/estafette-cloudflare-dns/milestone/1) for more details.", response)
 	})
 }
+
+func TestCapitalize(t *testing.T) {
+
+	t.Run("ReturnsEmptyStringForEmptyInput", func(t *testing.T) {
+
+		// act
+		output := capitalize("")
+
+		assert.Equal(t, "", output)
+	})
+
+	t.Run("ReturnsInputWithFirstCharacterOfFirstWordAsUppercase", func(t *testing.T) {
+
+		// act
+		output := capitalize("lowercase")
+
+		assert.Equal(t, "Lowercase", output)
+	})
+
+	t.Run("ReturnsInputWithFirstCharacterOfOtherWordsAsLowercase", func(t *testing.T) {
+
+		// act
+		output := capitalize("lowercase of more than one word")
+
+		assert.Equal(t, "Lowercase of more than one word", output)
+	})
+
+	t.Run("ReturnsInputWithFirstCharacterOfWordWithDashesAsUppercase", func(t *testing.T) {
+
+		// act
+		output := capitalize("estafette-cloudflare-dns")
+
+		assert.Equal(t, "Estafette-cloudflare-dns", output)
+	})
+}

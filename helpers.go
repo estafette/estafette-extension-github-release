@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 )
 
 func formatReleaseDescription(milestone *githubMilestone, issues []*githubIssue, pullRequests []*githubPullRequest) string {
@@ -46,4 +47,13 @@ func formatReleaseDescription(milestone *githubMilestone, issues []*githubIssue,
 	}
 
 	return response
+}
+
+func capitalize(input string) string {
+	runes := []rune(input)
+	if len(runes) > 1 {
+		return strings.ToUpper(string(runes[0])) + string(runes[1:])
+	}
+
+	return input
 }
