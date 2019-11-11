@@ -144,7 +144,7 @@ func TestFormatReleaseDescription(t *testing.T) {
 		// act
 		response := formatReleaseDescription(milestone, issues, pullRequests)
 
-		assert.Equal(t, "**Resolved pull requests (1)**\n* Add official helm chart. [#12](https://github.com/estafette/estafette-cloudflare-dns/pulls/12), [@JorritSalverda](https://github.com/JorritSalverda)\n", response)
+		assert.Equal(t, "**Merged pull requests (1)**\n* Add official helm chart. [#12](https://github.com/estafette/estafette-cloudflare-dns/pulls/12), [@JorritSalverda](https://github.com/JorritSalverda)\n", response)
 	})
 
 	t.Run("AddLinksToMultiplePullRequestsIfNotNil", func(t *testing.T) {
@@ -177,7 +177,7 @@ func TestFormatReleaseDescription(t *testing.T) {
 		// act
 		response := formatReleaseDescription(milestone, issues, pullRequests)
 
-		assert.Equal(t, "**Resolved pull requests (2)**\n* Add official helm chart. [#12](https://github.com/estafette/estafette-cloudflare-dns/pulls/12), [@JorritSalverda](https://github.com/JorritSalverda)\n* Create Github release. [#13](https://github.com/estafette/estafette-cloudflare-dns/pulls/13), [@JorritSalverda](https://github.com/JorritSalverda)\n", response)
+		assert.Equal(t, "**Merged pull requests (2)**\n* Add official helm chart. [#12](https://github.com/estafette/estafette-cloudflare-dns/pulls/12), [@JorritSalverda](https://github.com/JorritSalverda)\n* Create Github release. [#13](https://github.com/estafette/estafette-cloudflare-dns/pulls/13), [@JorritSalverda](https://github.com/JorritSalverda)\n", response)
 	})
 
 	t.Run("AddsWhitespaceBetweenMilestoneAndIssuesAndPullRequestsIfAllNotNil", func(t *testing.T) {
@@ -218,7 +218,7 @@ func TestFormatReleaseDescription(t *testing.T) {
 		// act
 		response := formatReleaseDescription(milestone, issues, pullRequests)
 
-		assert.Equal(t, "**Resolved issues (1)**\n* Add official helm chart. [#12](https://github.com/estafette/estafette-cloudflare-dns/issues/12), [@JorritSalverda](https://github.com/JorritSalverda)\n\n**Resolved pull requests (1)**\n* Add official helm chart. [#12](https://github.com/estafette/estafette-cloudflare-dns/pulls/12), [@JorritSalverda](https://github.com/JorritSalverda)\n\nSee [milestone 1.2.0](https://github.com/estafette/estafette-cloudflare-dns/milestone/1) for more details.", response)
+		assert.Equal(t, "**Resolved issues (1)**\n* Add official helm chart. [#12](https://github.com/estafette/estafette-cloudflare-dns/issues/12), [@JorritSalverda](https://github.com/JorritSalverda)\n\n**Merged pull requests (1)**\n* Add official helm chart. [#12](https://github.com/estafette/estafette-cloudflare-dns/pulls/12), [@JorritSalverda](https://github.com/JorritSalverda)\n\nSee [milestone 1.2.0](https://github.com/estafette/estafette-cloudflare-dns/milestone/1) for more details.", response)
 	})
 }
 

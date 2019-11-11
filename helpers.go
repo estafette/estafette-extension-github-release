@@ -25,9 +25,9 @@ func formatReleaseDescription(milestone *githubMilestone, issues []*githubIssue,
 		response += "\n"
 	}
 
-	// list resolved pull requests
+	// list merged pull requests
 	if len(pullRequests) > 0 {
-		response += fmt.Sprintf("**Resolved pull requests (%v)**\n", len(pullRequests))
+		response += fmt.Sprintf("**Merged pull requests (%v)**\n", len(pullRequests))
 	}
 	for _, i := range pullRequests {
 		response += fmt.Sprintf("* %v. [#%v](%v)", i.Title, i.Number, i.HTMLURL)
