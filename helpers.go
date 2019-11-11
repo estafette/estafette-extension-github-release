@@ -43,7 +43,7 @@ func formatReleaseDescription(milestone *githubMilestone, issues []*githubIssue,
 
 	// link to milestone
 	if milestone != nil {
-		response += fmt.Sprintf("See [milestone %v](%v) for more details.", milestone.Title, milestone.HTMLURL)
+		response += fmt.Sprintf("See [milestone %v](%v) for more details.", milestone.Title, fmt.Sprintf("%v?closed=1", milestone.HTMLURL))
 	}
 
 	return response
