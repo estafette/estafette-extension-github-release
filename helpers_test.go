@@ -255,4 +255,12 @@ func TestCapitalize(t *testing.T) {
 
 		assert.Equal(t, "Estafette-cloudflare-dns", output)
 	})
+
+	t.Run("ReturnsSingleCharacterInputAsUppercase", func(t *testing.T) {
+
+		// act
+		output := capitalize("e")
+
+		assert.Equal(t, "E", output)
+	})
 }

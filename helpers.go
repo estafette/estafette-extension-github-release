@@ -51,7 +51,7 @@ func formatReleaseDescription(milestone *githubMilestone, issues []*githubIssue,
 
 func capitalize(input string) string {
 	runes := []rune(input)
-	if len(runes) > 1 {
+	if len(runes) > 0 {
 		return strings.ToUpper(string(runes[0])) + string(runes[1:])
 	}
 
