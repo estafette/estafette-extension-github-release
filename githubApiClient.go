@@ -154,7 +154,7 @@ func (gh *githubAPIClientImpl) UploadReleaseAssets(createdRelease githubRelease,
 		uploadURL += filepath.Base(a)
 
 		// upload to github
-		_, err = gh.callGithubAPI("POST", uploadURL, "application/zip", []int{http.StatusOK}, fileContent)
+		_, err = gh.callGithubAPI("POST", uploadURL, "application/zip", []int{http.StatusCreated}, fileContent)
 		if err != nil {
 			return err
 		}
