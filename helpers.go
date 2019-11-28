@@ -101,6 +101,10 @@ func addFileToZip(zipWriter *zip.Writer, filename string) error {
 		return err
 	}
 
+	// Change to deflate to gain better compression
+	// see http://golang.org/pkg/archive/zip/#pkg-constants
+	header.Method = zip.Deflate
+
 	writer, err := zipWriter.CreateHeader(header)
 	if err != nil {
 		return err
