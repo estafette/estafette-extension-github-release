@@ -151,7 +151,7 @@ func (gh *githubAPIClientImpl) UploadReleaseAssets(createdRelease githubRelease,
 		}
 
 		uploadURL := strings.Replace(createdRelease.UploadURL, "{?name,label}", "?name=", 1)
-		uploadURL += filepath.Base(a)
+		uploadURL += filepath.Base(targetFilename)
 
 		// upload to github
 		_, err = gh.callGithubAPI("POST", uploadURL, "application/zip", []int{http.StatusCreated}, fileContent)
