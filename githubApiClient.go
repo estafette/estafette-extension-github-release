@@ -218,7 +218,7 @@ func (gh *githubAPIClientImpl) callGithubAPI(method, url, contentType string, va
 		return
 	}
 
-	zerolog.Debug().Str("method", method).Str("url", url).Str("contentType", contentType).Msg("Calling github api")
+	zerolog.Debug().Str("method", method).Str("url", url).Str("contentType", contentType).Int64("contentLength", request.ContentLength).Msg("Calling github api")
 
 	// add headers
 	request.Header.Add("Authorization", fmt.Sprintf("%v %v", "token", gh.accessToken))
