@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	zerolog "github.com/rs/zerolog/log"
 	"github.com/sethgrid/pester"
 )
 
@@ -150,6 +151,8 @@ func (gh *githubAPIClientImpl) UploadReleaseAssets(createdRelease githubRelease,
 			return err
 		}
 
+		zerolog.Debug().Int("contentLength", len(fileContent)).Msgf("Number of bytes for file %v", targetFilename)
+
 		uploadURL := strings.Replace(createdRelease.UploadURL, "{?name,label}", "?name=", 1)
 		uploadURL += filepath.Base(targetFilename)
 
@@ -175,7 +178,7 @@ func (gh *githubAPIClientImpl) CloseMilestone(repoOwner, repoName string, milest
 		DueOn:       milestone.DueOn,
 	}
 
-	_, err = gh.callGithubAPI("PATCH", fmt.Sprintf("https://api.github.com/repos/%v/%v/milestones/%v", repoOwner, repoName, milestone.Number), "", []int{http.StatusOK}, updateRequest)
+	_, err = gh.callGithubAPI("PATCH", fmt.Sprintf("https://api.github.com/repos/%v/%v/milestones/%v", repoOwner, repoName, milestone.Number), "application/json", []int{http.StatusOK}, updateRequest)
 
 	if err != nil {
 		return
@@ -200,6 +203,8 @@ func (gh *githubAPIClientImpl) callGithubAPI(method, url, contentType string, va
 			requestBody = bytes.NewReader(data)
 		case "application/zip":
 			requestBody = bytes.NewReader([]byte(contentType))
+		default:
+			requestBody = bytes.NewReader([]byte(contentType))
 		}
 	}
 
@@ -212,6 +217,8 @@ func (gh *githubAPIClientImpl) callGithubAPI(method, url, contentType string, va
 	if err != nil {
 		return
 	}
+
+	zerolog.Debug().Str("method", method).Str("url", url).Str("contentType", contentType).Msg("Calling github api")
 
 	// add headers
 	request.Header.Add("Authorization", fmt.Sprintf("%v %v", "token", gh.accessToken))
