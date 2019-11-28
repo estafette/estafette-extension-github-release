@@ -38,7 +38,7 @@ func (gh *githubAPIClientImpl) GetMilestoneByVersion(repoOwner, repoName, versio
 	// https://developer.github.com/v3/issues/milestones/#list-milestones-for-a-repository
 	log.Printf("\nRetrieving milestone with title %v...", version)
 
-	body, err := gh.callGithubAPI("GET", fmt.Sprintf("https://api.github.com/repos/%v/%v/milestones?state=open", repoOwner, repoName), []int{http.StatusOK}, nil)
+	body, err := gh.callGithubAPI("GET", fmt.Sprintf("https://api.github.com/repos/%v/%v/milestones?state=open", repoOwner, repoName), "", []int{http.StatusOK}, nil)
 
 	var milestones []*githubMilestone
 	err = json.Unmarshal(body, &milestones)
@@ -61,7 +61,7 @@ func (gh *githubAPIClientImpl) GetIssuesAndPullRequestsForMilestone(repoOwner, r
 	// https://developer.github.com/v3/issues/#list-issues-for-a-repository
 	log.Printf("\nRetrieving issues for milestone #%v...", milestone.Number)
 
-	body, err := gh.callGithubAPI("GET", fmt.Sprintf("https://api.github.com/repos/%v/%v/issues?state=closed&milestone=%v", repoOwner, repoName, milestone.Number), []int{http.StatusOK}, nil)
+	body, err := gh.callGithubAPI("GET", fmt.Sprintf("https://api.github.com/repos/%v/%v/issues?state=closed&milestone=%v", repoOwner, repoName, milestone.Number), "", []int{http.StatusOK}, nil)
 
 	var issuesAndPullRequests []*githubIssue
 	err = json.Unmarshal(body, &issuesAndPullRequests)
@@ -112,7 +112,7 @@ func (gh *githubAPIClientImpl) CreateRelease(repoOwner, repoName, gitRevision, v
 	}
 
 	var responseBody []byte
-	responseBody, err = gh.callGithubAPI("POST", fmt.Sprintf("https://api.github.com/repos/%v/%v/releases", repoOwner, repoName), []int{http.StatusCreated}, release)
+	responseBody, err = gh.callGithubAPI("POST", fmt.Sprintf("https://api.github.com/repos/%v/%v/releases", repoOwner, repoName), "application/json", []int{http.StatusCreated}, release)
 
 	if err != nil && !strings.Contains(err.Error(), "already_exists") {
 		return
@@ -154,7 +154,7 @@ func (gh *githubAPIClientImpl) UploadReleaseAssets(createdRelease githubRelease,
 		uploadURL += filepath.Base(a)
 
 		// upload to github
-		_, err = gh.callGithubAPI("POST", uploadURL, []int{http.StatusOK}, fileContent)
+		_, err = gh.callGithubAPI("POST", uploadURL, "application/zip", []int{http.StatusOK}, fileContent)
 		if err != nil {
 			return err
 		}
@@ -175,7 +175,7 @@ func (gh *githubAPIClientImpl) CloseMilestone(repoOwner, repoName string, milest
 		DueOn:       milestone.DueOn,
 	}
 
-	_, err = gh.callGithubAPI("PATCH", fmt.Sprintf("https://api.github.com/repos/%v/%v/milestones/%v", repoOwner, repoName, milestone.Number), []int{http.StatusOK}, updateRequest)
+	_, err = gh.callGithubAPI("PATCH", fmt.Sprintf("https://api.github.com/repos/%v/%v/milestones/%v", repoOwner, repoName, milestone.Number), "", []int{http.StatusOK}, updateRequest)
 
 	if err != nil {
 		return
@@ -186,16 +186,21 @@ func (gh *githubAPIClientImpl) CloseMilestone(repoOwner, repoName string, milest
 	return nil
 }
 
-func (gh *githubAPIClientImpl) callGithubAPI(method, url string, validStatusCodes []int, params interface{}) (body []byte, err error) {
+func (gh *githubAPIClientImpl) callGithubAPI(method, url, contentType string, validStatusCodes []int, params interface{}) (body []byte, err error) {
 
 	// convert params to json if they're present
 	var requestBody io.Reader
 	if params != nil {
-		data, err := json.Marshal(params)
-		if err != nil {
-			return body, err
+		switch contentType {
+		case "application/json":
+			data, err := json.Marshal(params)
+			if err != nil {
+				return body, err
+			}
+			requestBody = bytes.NewReader(data)
+		case "application/zip":
+			requestBody = bytes.NewReader([]byte(contentType))
 		}
-		requestBody = bytes.NewReader(data)
 	}
 
 	// create client, in order to add headers
@@ -211,6 +216,9 @@ func (gh *githubAPIClientImpl) callGithubAPI(method, url string, validStatusCode
 	// add headers
 	request.Header.Add("Authorization", fmt.Sprintf("%v %v", "token", gh.accessToken))
 	request.Header.Add("Accept", "application/vnd.github.machine-man-preview+json")
+	if contentType != "" {
+		request.Header.Add("Content-Type", contentType)
+	}
 
 	// perform actual request
 	response, err := client.Do(request)
