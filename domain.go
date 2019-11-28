@@ -28,6 +28,7 @@ type githubRelease struct {
 	Body            string `json:"body"`
 	Draft           bool   `json:"draft"`
 	PreRelease      bool   `json:"prerelease"`
+	UploadURL       string `json:"upload_url,omitempty"`
 }
 
 type githubIssue struct {

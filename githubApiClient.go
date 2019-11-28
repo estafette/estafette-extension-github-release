@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"path/filepath"
 	"strings"
 
 	"github.com/sethgrid/pester"
@@ -19,7 +20,7 @@ type GithubAPIClient interface {
 	GetIssuesAndPullRequestsForMilestone(repoOwner, repoName string, milestone githubMilestone) (issues []*githubIssue, pullRequests []*githubPullRequest, err error)
 	CreateRelease(repoOwner, repoName, gitRevision, version string, milestone *githubMilestone, issues []*githubIssue, pullRequests []*githubPullRequest, title string) (createdRelease *githubRelease, err error)
 	CloseMilestone(repoOwner, repoName string, milestone githubMilestone) (err error)
-	UploadReleaseAssets(repoOwner, gitRepoName, createdRelease githubRelease, files []string) (err error)
+	UploadReleaseAssets(createdRelease githubRelease, assets []string) (err error)
 }
 
 type githubAPIClientImpl struct {
@@ -132,9 +133,32 @@ func (gh *githubAPIClientImpl) CreateRelease(repoOwner, repoName, gitRevision, v
 	return createdRelease, nil
 }
 
-func (gh *githubAPIClientImpl) UploadReleaseAssets(repoOwner, gitRepoName, createdRelease githubRelease, files []string) (err error) {
+func (gh *githubAPIClientImpl) UploadReleaseAssets(createdRelease githubRelease, assets []string) (err error) {
+
 	// https://developer.github.com/v3/repos/releases/#upload-a-release-asset
-	// POST https://uploads.github.com/repos/octocat/Hello-World/releases/1/assets?name=foo.zip
+	for _, a := range assets {
+
+		// zip file
+		targetFilename, err := zipFile(a)
+		if err != nil {
+			return err
+		}
+
+		// read zip file from disk
+		fileContent, err := ioutil.ReadFile(targetFilename)
+		if err != nil {
+			return err
+		}
+
+		uploadURL := strings.Replace(createdRelease.UploadURL, "{?name,label}", "?name=", 1)
+		uploadURL += filepath.Base(a)
+
+		// upload to github
+		_, err = gh.callGithubAPI("POST", uploadURL, []int{http.StatusOK}, fileContent)
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
