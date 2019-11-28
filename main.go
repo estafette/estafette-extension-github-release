@@ -64,13 +64,13 @@ func main() {
 	githubAPIClient := newGithubAPIClient(credentials[0].AdditionalProperties.Token)
 
 	// get milestone by version
-	milestone, err := githubAPIClient.GetMilestoneByVersion(*gitRepoOwner, *gitRepoName, version)
+	milestone, err := githubAPIClient.GetMilestoneByVersion(*gitRepoOwner, *gitRepoName, params.ReleaseVersion)
 	if !params.IgnoreMissingMilestone {
 		if err != nil {
-			log.Fatalf("Retrieving milestone failed. Please create a milestone with title %v if it does not exist. %v", version, err)
+			log.Fatalf("Retrieving milestone failed. Please create a milestone with title %v if it does not exist. %v", params.ReleaseVersion, err)
 		}
 		if milestone == nil {
-			log.Fatalf("Milestone does not exist. Please create a milestone with title %v and retry", version)
+			log.Fatalf("Milestone does not exist. Please create a milestone with title %v and retry", params.ReleaseVersion)
 		}
 	}
 
@@ -86,16 +86,16 @@ func main() {
 	}
 
 	// create release
-	createdRelease, err := githubAPIClient.CreateRelease(*gitRepoOwner, *gitRepoName, *gitRevision, version, milestone, issues, pullRequests, params)
+	createdRelease, err := githubAPIClient.CreateRelease(*gitRepoOwner, *gitRepoName, *gitRevision, params.ReleaseVersion, milestone, issues, pullRequests, params)
 	if err != nil {
-		log.Fatalf("Creating release with name %v failed: %v", version, err)
+		log.Fatalf("Creating release with name %v failed: %v", params.ReleaseVersion, err)
 	}
 
 	// upload assets
 	if createdRelease != nil {
 		err = githubAPIClient.UploadReleaseAssets(*createdRelease, params.Assets)
 		if err != nil {
-			log.Fatalf("Uploading assets %v failed: %v", version, err)
+			log.Fatalf("Uploading assets %v failed: %v", params.ReleaseVersion, err)
 		}
 	}
 
