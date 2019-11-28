@@ -202,9 +202,9 @@ func (gh *githubAPIClientImpl) callGithubAPI(method, url, contentType string, va
 			}
 			requestBody = bytes.NewReader(data)
 		case "application/zip":
-			requestBody = bytes.NewReader([]byte(contentType))
+			requestBody = bytes.NewReader(params.([]byte))
 		default:
-			requestBody = bytes.NewReader([]byte(contentType))
+			requestBody = bytes.NewReader(params.([]byte))
 		}
 	}
 
