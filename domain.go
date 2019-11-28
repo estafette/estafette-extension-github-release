@@ -21,6 +21,7 @@ type githubMilestoneUpdateRequest struct {
 }
 
 type githubRelease struct {
+	ID              int    `json:"id,omitempty"`
 	TagName         string `json:"tag_name"`
 	TargetCommitish string `json:"target_commitish"`
 	Name            string `json:"name"`

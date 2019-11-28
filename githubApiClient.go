@@ -17,8 +17,9 @@ import (
 type GithubAPIClient interface {
 	GetMilestoneByVersion(repoOwner, repoName, version string) (ms *githubMilestone, err error)
 	GetIssuesAndPullRequestsForMilestone(repoOwner, repoName string, milestone githubMilestone) (issues []*githubIssue, pullRequests []*githubPullRequest, err error)
-	CreateRelease(repoOwner, repoName, gitRevision, version string, milestone *githubMilestone, issues []*githubIssue, pullRequests []*githubPullRequest, title string) (err error)
+	CreateRelease(repoOwner, repoName, gitRevision, version string, milestone *githubMilestone, issues []*githubIssue, pullRequests []*githubPullRequest, title string) (createdRelease *githubRelease, err error)
 	CloseMilestone(repoOwner, repoName string, milestone githubMilestone) (err error)
+	UploadReleaseAssets(repoOwner, gitRepoName, createdRelease githubRelease, files []string) (err error)
 }
 
 type githubAPIClientImpl struct {
@@ -87,7 +88,7 @@ func (gh *githubAPIClientImpl) GetIssuesAndPullRequestsForMilestone(repoOwner, r
 	return issues, pullRequests, nil
 }
 
-func (gh *githubAPIClientImpl) CreateRelease(repoOwner, repoName, gitRevision, version string, milestone *githubMilestone, issues []*githubIssue, pullRequests []*githubPullRequest, title string) (err error) {
+func (gh *githubAPIClientImpl) CreateRelease(repoOwner, repoName, gitRevision, version string, milestone *githubMilestone, issues []*githubIssue, pullRequests []*githubPullRequest, title string) (createdRelease *githubRelease, err error) {
 
 	// https://developer.github.com/v3/repos/releases/#create-a-release
 	log.Printf("\nCreating release %v...", version)
@@ -95,24 +96,45 @@ func (gh *githubAPIClientImpl) CreateRelease(repoOwner, repoName, gitRevision, v
 	tagName := fmt.Sprintf("v%v", version)
 	releaseName := fmt.Sprintf("%v v%v", title, version)
 
+	var body string
+	if milestone != nil {
+		body = formatReleaseDescription(milestone, issues, pullRequests)
+	}
+
 	release := githubRelease{
 		TagName:         tagName,
 		TargetCommitish: gitRevision,
 		Name:            releaseName,
-		Body:            formatReleaseDescription(milestone, issues, pullRequests),
+		Body:            body,
 		Draft:           false,
 		PreRelease:      false,
 	}
 
-	_, err = gh.callGithubAPI("POST", fmt.Sprintf("https://api.github.com/repos/%v/%v/releases", repoOwner, repoName), []int{http.StatusCreated}, release)
+	var responseBody []byte
+	responseBody, err = gh.callGithubAPI("POST", fmt.Sprintf("https://api.github.com/repos/%v/%v/releases", repoOwner, repoName), []int{http.StatusCreated}, release)
 
 	if err != nil && !strings.Contains(err.Error(), "already_exists") {
 		return
 	} else if err != nil && strings.Contains(err.Error(), "already_exists") {
 		log.Printf("Release already exist, skipping")
-	} else {
-		log.Printf("Created release")
+		return createdRelease, nil
 	}
+
+	log.Printf("Created release")
+
+	err = json.Unmarshal(responseBody, &release)
+	if err != nil {
+		return
+	}
+
+	createdRelease = &release
+
+	return createdRelease, nil
+}
+
+func (gh *githubAPIClientImpl) UploadReleaseAssets(repoOwner, gitRepoName, createdRelease githubRelease, files []string) (err error) {
+	// https://developer.github.com/v3/repos/releases/#upload-a-release-asset
+	// POST https://uploads.github.com/repos/octocat/Hello-World/releases/1/assets?name=foo.zip
 
 	return nil
 }
