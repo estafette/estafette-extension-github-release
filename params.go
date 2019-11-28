@@ -5,6 +5,8 @@ type Params struct {
 	ReleaseVersion         string   `json:"version,omitempty" yaml:"version,omitempty"`
 	CloseMilestone         bool     `json:"closeMilestone,omitempty" yaml:"closeMilestone,omitempty"`
 	ReleaseTitle           string   `json:"title,omitempty" yaml:"title,omitempty"`
+	Draft                  bool     `json:"draft,omitempty" yaml:"draft,omitempty"`
+	PreRelease             bool     `json:"prerelease,omitempty" yaml:"prerelease,omitempty"`
 	IgnoreMissingMilestone bool     `json:"ignoreMissingMilestone,omitempty" yaml:"ignoreMissingMilestone,omitempty"`
 	Assets                 []string `json:"assets,omitempty" yaml:"assets,omitempty"`
 }

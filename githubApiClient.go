@@ -18,7 +18,7 @@ import (
 type GithubAPIClient interface {
 	GetMilestoneByVersion(repoOwner, repoName, version string) (ms *githubMilestone, err error)
 	GetIssuesAndPullRequestsForMilestone(repoOwner, repoName string, milestone githubMilestone) (issues []*githubIssue, pullRequests []*githubPullRequest, err error)
-	CreateRelease(repoOwner, repoName, gitRevision, version string, milestone *githubMilestone, issues []*githubIssue, pullRequests []*githubPullRequest, title string) (createdRelease *githubRelease, err error)
+	CreateRelease(repoOwner, repoName, gitRevision, version string, milestone *githubMilestone, issues []*githubIssue, pullRequests []*githubPullRequest, params Params) (createdRelease *githubRelease, err error)
 	CloseMilestone(repoOwner, repoName string, milestone githubMilestone) (err error)
 	UploadReleaseAssets(createdRelease githubRelease, assets []string) (err error)
 }
@@ -89,13 +89,13 @@ func (gh *githubAPIClientImpl) GetIssuesAndPullRequestsForMilestone(repoOwner, r
 	return issues, pullRequests, nil
 }
 
-func (gh *githubAPIClientImpl) CreateRelease(repoOwner, repoName, gitRevision, version string, milestone *githubMilestone, issues []*githubIssue, pullRequests []*githubPullRequest, title string) (createdRelease *githubRelease, err error) {
+func (gh *githubAPIClientImpl) CreateRelease(repoOwner, repoName, gitRevision, version string, milestone *githubMilestone, issues []*githubIssue, pullRequests []*githubPullRequest, params Params) (createdRelease *githubRelease, err error) {
 
 	// https://developer.github.com/v3/repos/releases/#create-a-release
 	log.Printf("\nCreating release %v...", version)
 
 	tagName := fmt.Sprintf("v%v", version)
-	releaseName := fmt.Sprintf("%v v%v", title, version)
+	releaseName := fmt.Sprintf("%v v%v", params.ReleaseTitle, version)
 
 	var body string
 	if milestone != nil {
@@ -107,8 +107,8 @@ func (gh *githubAPIClientImpl) CreateRelease(repoOwner, repoName, gitRevision, v
 		TargetCommitish: gitRevision,
 		Name:            releaseName,
 		Body:            body,
-		Draft:           false,
-		PreRelease:      false,
+		Draft:           params.Draft,
+		PreRelease:      params.PreRelease,
 	}
 
 	var responseBody []byte

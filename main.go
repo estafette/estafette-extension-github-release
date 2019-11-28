@@ -86,7 +86,7 @@ func main() {
 	}
 
 	// create release
-	createdRelease, err := githubAPIClient.CreateRelease(*gitRepoOwner, *gitRepoName, *gitRevision, version, milestone, issues, pullRequests, params.ReleaseTitle)
+	createdRelease, err := githubAPIClient.CreateRelease(*gitRepoOwner, *gitRepoName, *gitRevision, version, milestone, issues, pullRequests, params)
 	if err != nil {
 		log.Fatalf("Creating release with name %v failed: %v", version, err)
 	}
