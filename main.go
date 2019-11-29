@@ -2,12 +2,11 @@ package main
 
 import (
 	"encoding/json"
-	"log"
 	"runtime"
 
 	"github.com/alecthomas/kingpin"
 	foundation "github.com/estafette/estafette-foundation"
-	zerolog "github.com/rs/zerolog/log"
+	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v2"
 )
 
@@ -40,21 +39,21 @@ func main() {
 	// init log format from envvar ESTAFETTE_LOG_FORMAT
 	foundation.InitLoggingFromEnv(appgroup, app, version, branch, revision, buildDate)
 
-	zerolog.Info().Msg("Unmarshalling parameters...")
+	log.Info().Msg("Unmarshalling parameters...")
 	var params Params
 	err := yaml.Unmarshal([]byte(*paramsYAML), &params)
 	if err != nil {
-		zerolog.Fatal().Err(err).Msg("Failed unmarshalling parameters")
+		log.Fatal().Err(err).Msg("Failed unmarshalling parameters")
 	}
 
 	// get api token from injected credentials
 	var credentials []APITokenCredentials
 	err = json.Unmarshal([]byte(*apiTokenJSON), &credentials)
 	if err != nil {
-		log.Fatal("Failed unmarshalling injected credentials: ", err)
+		log.Fatal().Err(err).Msg("Failed unmarshalling injected credentials")
 	}
 	if len(credentials) == 0 {
-		log.Fatal("No credentials have been injected")
+		log.Fatal().Msg("No credentials have been injected")
 	}
 
 	// set defaults
@@ -67,10 +66,10 @@ func main() {
 	milestone, err := githubAPIClient.GetMilestoneByVersion(*gitRepoOwner, *gitRepoName, params.ReleaseVersion)
 	if !params.IgnoreMissingMilestone {
 		if err != nil {
-			log.Fatalf("Retrieving milestone failed. Please create a milestone with title %v if it does not exist. %v", params.ReleaseVersion, err)
+			log.Fatal().Err(err).Msgf("Retrieving milestone failed. Please create a milestone with title %v if it does not exist.", params.ReleaseVersion)
 		}
 		if milestone == nil {
-			log.Fatalf("Milestone does not exist. Please create a milestone with title %v and retry", params.ReleaseVersion)
+			log.Fatal().Msgf("Milestone does not exist. Please create a milestone with title %v and retry", params.ReleaseVersion)
 		}
 	}
 
@@ -81,21 +80,21 @@ func main() {
 		// retrieve issues for milestone
 		issues, pullRequests, err = githubAPIClient.GetIssuesAndPullRequestsForMilestone(*gitRepoOwner, *gitRepoName, *milestone)
 		if err != nil {
-			log.Fatalf("Retrieving issues and pull requests for milestone #%v failed: %v", milestone.Number, err)
+			log.Fatal().Err(err).Msgf("Retrieving issues and pull requests for milestone #%v failed", milestone.Number)
 		}
 	}
 
 	// create release
 	createdRelease, err := githubAPIClient.CreateRelease(*gitRepoOwner, *gitRepoName, *gitRevision, params.ReleaseVersion, milestone, issues, pullRequests, params)
 	if err != nil {
-		log.Fatalf("Creating release with name %v failed: %v", params.ReleaseVersion, err)
+		log.Fatal().Err(err).Msgf("Creating release with name %v failed", params.ReleaseVersion)
 	}
 
 	// upload assets
 	if createdRelease != nil {
 		err = githubAPIClient.UploadReleaseAssets(*createdRelease, params.Assets)
 		if err != nil {
-			log.Fatalf("Uploading assets %v failed: %v", params.ReleaseVersion, err)
+			log.Fatal().Err(err).Msgf("Uploading assets %v failed", params.ReleaseVersion)
 		}
 	}
 
@@ -103,9 +102,9 @@ func main() {
 	if milestone != nil && params.CloseMilestone {
 		err = githubAPIClient.CloseMilestone(*gitRepoOwner, *gitRepoName, *milestone)
 		if err != nil {
-			log.Fatalf("Closing milestone #%v failed: %v", milestone.Number, err)
+			log.Fatal().Err(err).Msgf("Closing milestone #%v failed", milestone.Number)
 		}
 	}
 
-	log.Println("\nFinished estafette-extension-github-release...")
+	log.Info().Msg("Finished estafette-extension-github-release...")
 }

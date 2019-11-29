@@ -6,12 +6,11 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"path/filepath"
 	"strings"
 
-	zerolog "github.com/rs/zerolog/log"
+	"github.com/rs/zerolog/log"
 	"github.com/sethgrid/pester"
 )
 
@@ -37,7 +36,7 @@ func newGithubAPIClient(accessToken string) GithubAPIClient {
 func (gh *githubAPIClientImpl) GetMilestoneByVersion(repoOwner, repoName, version string) (ms *githubMilestone, err error) {
 
 	// https://developer.github.com/v3/issues/milestones/#list-milestones-for-a-repository
-	log.Printf("\nRetrieving milestone with title %v...", version)
+	log.Info().Msgf("Retrieving milestone with title %v...", version)
 
 	body, err := gh.callGithubAPI("GET", fmt.Sprintf("https://api.github.com/repos/%v/%v/milestones?state=open", repoOwner, repoName), "", []int{http.StatusOK}, nil)
 
@@ -49,7 +48,7 @@ func (gh *githubAPIClientImpl) GetMilestoneByVersion(repoOwner, repoName, versio
 
 	for _, m := range milestones {
 		if m.Title == version {
-			log.Printf("Retrieved milestone")
+			log.Info().Msg("Retrieved milestone")
 			return m, nil
 		}
 	}
@@ -60,7 +59,7 @@ func (gh *githubAPIClientImpl) GetMilestoneByVersion(repoOwner, repoName, versio
 func (gh *githubAPIClientImpl) GetIssuesAndPullRequestsForMilestone(repoOwner, repoName string, milestone githubMilestone) (issues []*githubIssue, pullRequests []*githubPullRequest, err error) {
 
 	// https://developer.github.com/v3/issues/#list-issues-for-a-repository
-	log.Printf("\nRetrieving issues for milestone #%v...", milestone.Number)
+	log.Info().Msgf("Retrieving issues for milestone #%v...", milestone.Number)
 
 	body, err := gh.callGithubAPI("GET", fmt.Sprintf("https://api.github.com/repos/%v/%v/issues?state=closed&milestone=%v", repoOwner, repoName, milestone.Number), "", []int{http.StatusOK}, nil)
 
@@ -85,7 +84,7 @@ func (gh *githubAPIClientImpl) GetIssuesAndPullRequestsForMilestone(repoOwner, r
 		}
 	}
 
-	log.Printf("Retrieved %v issues and %v pull requests", len(issues), len(pullRequests))
+	log.Info().Msgf("Retrieved %v issues and %v pull requests", len(issues), len(pullRequests))
 
 	return issues, pullRequests, nil
 }
@@ -93,7 +92,7 @@ func (gh *githubAPIClientImpl) GetIssuesAndPullRequestsForMilestone(repoOwner, r
 func (gh *githubAPIClientImpl) CreateRelease(repoOwner, repoName, gitRevision, version string, milestone *githubMilestone, issues []*githubIssue, pullRequests []*githubPullRequest, params Params) (createdRelease *githubRelease, err error) {
 
 	// https://developer.github.com/v3/repos/releases/#create-a-release
-	log.Printf("\nCreating release %v...", version)
+	log.Info().Msgf("Creating release %v...", version)
 
 	tagName := fmt.Sprintf("v%v", version)
 	releaseName := fmt.Sprintf("%v v%v", params.ReleaseTitle, version)
@@ -118,11 +117,11 @@ func (gh *githubAPIClientImpl) CreateRelease(repoOwner, repoName, gitRevision, v
 	if err != nil && !strings.Contains(err.Error(), "already_exists") {
 		return
 	} else if err != nil && strings.Contains(err.Error(), "already_exists") {
-		log.Printf("Release already exist, skipping")
+		log.Info().Msg("Release already exist, skipping")
 		return createdRelease, nil
 	}
 
-	log.Printf("Created release")
+	log.Info().Msg("Created release")
 
 	err = json.Unmarshal(responseBody, &release)
 	if err != nil {
@@ -151,8 +150,6 @@ func (gh *githubAPIClientImpl) UploadReleaseAssets(createdRelease githubRelease,
 			return err
 		}
 
-		zerolog.Debug().Int("contentLength", len(fileContent)).Msgf("Number of bytes for file %v", targetFilename)
-
 		uploadURL := strings.Replace(createdRelease.UploadURL, "{?name,label}", "?name=", 1)
 		uploadURL += filepath.Base(targetFilename)
 
@@ -169,7 +166,7 @@ func (gh *githubAPIClientImpl) UploadReleaseAssets(createdRelease githubRelease,
 func (gh *githubAPIClientImpl) CloseMilestone(repoOwner, repoName string, milestone githubMilestone) (err error) {
 
 	// https://developer.github.com/v3/issues/milestones/#update-a-milestone
-	log.Printf("\nClosing milestone #%v...", milestone.Number)
+	log.Info().Msgf("Closing milestone #%v...", milestone.Number)
 
 	updateRequest := githubMilestoneUpdateRequest{
 		Title:       milestone.Title,
@@ -184,7 +181,7 @@ func (gh *githubAPIClientImpl) CloseMilestone(repoOwner, repoName string, milest
 		return
 	}
 
-	log.Printf("Closed milestone")
+	log.Info().Msg("Closed milestone")
 
 	return nil
 }
@@ -218,8 +215,6 @@ func (gh *githubAPIClientImpl) callGithubAPI(method, url, contentType string, va
 		return
 	}
 
-	zerolog.Debug().Str("method", method).Str("url", url).Str("contentType", contentType).Int64("contentLength", request.ContentLength).Msg("Calling github api")
-
 	// add headers
 	request.Header.Add("Authorization", fmt.Sprintf("%v %v", "token", gh.accessToken))
 	request.Header.Add("Accept", "application/vnd.github.machine-man-preview+json")
@@ -251,7 +246,7 @@ func (gh *githubAPIClientImpl) callGithubAPI(method, url, contentType string, va
 	}
 
 	if string(body) == "" {
-		log.Printf("Received successful response without body for '%v %v' with status code %v", method, url, response.StatusCode)
+		log.Info().Msgf("Received successful response without body for '%v %v' with status code %v", method, url, response.StatusCode)
 		return
 	}
 
@@ -259,7 +254,7 @@ func (gh *githubAPIClientImpl) callGithubAPI(method, url, contentType string, va
 	var b interface{}
 	err = json.Unmarshal(body, &b)
 	if err != nil {
-		log.Printf("Deserializing response for '%v' Github api call failed. Body: %v. Error: %v", url, string(body), err)
+		log.Info().Msgf("Deserializing response for '%v' Github api call failed. Body: %v. Error: %v", url, string(body), err)
 		return
 	}
 
