@@ -3,7 +3,7 @@ package main
 // Params are the parameters passed to this extension via the custom properties of the estafette stage
 type Params struct {
 	ReleaseVersion         string   `json:"version,omitempty" yaml:"version,omitempty"`
-	CloseMilestone         bool     `json:"closeMilestone,omitempty" yaml:"closeMilestone,omitempty"`
+	CloseMilestone         *bool    `json:"closeMilestone,omitempty" yaml:"closeMilestone,omitempty"`
 	ReleaseTitle           string   `json:"title,omitempty" yaml:"title,omitempty"`
 	Draft                  bool     `json:"draft,omitempty" yaml:"draft,omitempty"`
 	PreRelease             bool     `json:"prerelease,omitempty" yaml:"prerelease,omitempty"`
@@ -20,5 +20,10 @@ func (p *Params) SetDefaults(buildVersion, gitRepoName string) {
 
 	if p.ReleaseTitle == "" {
 		p.ReleaseTitle = capitalize(gitRepoName)
+	}
+
+	if p.CloseMilestone == nil {
+		trueValue := true
+		p.CloseMilestone = &trueValue
 	}
 }

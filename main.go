@@ -99,7 +99,7 @@ func main() {
 	}
 
 	// close milestone
-	if milestone != nil && params.CloseMilestone {
+	if milestone != nil && params.CloseMilestone != nil && *params.CloseMilestone {
 		err = githubAPIClient.CloseMilestone(*gitRepoOwner, *gitRepoName, *milestone)
 		if err != nil {
 			log.Fatal().Err(err).Msgf("Closing milestone #%v failed", milestone.Number)
