@@ -43,6 +43,22 @@ stages:
     copy:
     - /etc/ssl/certs/ca-certificates.crt
 
+  check-container:
+    parallelStages:
+      check-efficiency:
+        image: extensions/docker:dev
+        action: dive
+        container: github-release
+        repositories:
+        - extensions
+
+      vulnerability-scan:
+        image: extensions/docker:dev
+        action: trivy
+        container: github-release
+        repositories:
+        - extensions
+
   push-to-docker-hub:
     image: extensions/docker:dev
     action: push
