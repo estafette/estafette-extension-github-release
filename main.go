@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"runtime"
 
 	"github.com/alecthomas/kingpin"
@@ -22,11 +23,11 @@ var (
 
 var (
 	// flags
-	apiTokenJSON = kingpin.Flag("credentials", "Github api token credentials configured at the CI server, passed in to this trusted extension.").Envar("ESTAFETTE_CREDENTIALS_GITHUB_API_TOKEN").Required().String()
-	gitRepoOwner = kingpin.Flag("git-repo-owner", "The owner of the Github repository.").Envar("ESTAFETTE_GIT_OWNER").Required().String()
-	gitRepoName  = kingpin.Flag("git-repo-name", "The name of the Github repository.").Envar("ESTAFETTE_GIT_NAME").Required().String()
-	gitRevision  = kingpin.Flag("git-revision", "The hash of the revision to set build status for.").Envar("ESTAFETTE_GIT_REVISION").Required().String()
-	buildVersion = kingpin.Flag("build-version", "The version of the pipeline.").Envar("ESTAFETTE_BUILD_VERSION").String()
+	apiTokenJSONPath = kingpin.Flag("credentials-path", "Path to file with Github api token credentials configured at the CI server, passed in to this trusted extension.").Default("/credentials/github_api_token.json").String()
+	gitRepoOwner     = kingpin.Flag("git-repo-owner", "The owner of the Github repository.").Envar("ESTAFETTE_GIT_OWNER").Required().String()
+	gitRepoName      = kingpin.Flag("git-repo-name", "The name of the Github repository.").Envar("ESTAFETTE_GIT_NAME").Required().String()
+	gitRevision      = kingpin.Flag("git-revision", "The hash of the revision to set build status for.").Envar("ESTAFETTE_GIT_REVISION").Required().String()
+	buildVersion     = kingpin.Flag("build-version", "The version of the pipeline.").Envar("ESTAFETTE_BUILD_VERSION").String()
 
 	paramsYAML = kingpin.Flag("params-yaml", "Extension parameters, created from custom properties.").Envar("ESTAFETTE_EXTENSION_CUSTOM_PROPERTIES_YAML").Required().String()
 )
@@ -48,12 +49,25 @@ func main() {
 
 	// get api token from injected credentials
 	var credentials []APITokenCredentials
-	err = json.Unmarshal([]byte(*apiTokenJSON), &credentials)
-	if err != nil {
-		log.Fatal().Err(err).Msg("Failed unmarshalling injected credentials")
+	// use mounted credential file if present instead of relying on an envvar
+	if runtime.GOOS == "windows" {
+		*apiTokenJSONPath = "C:" + *apiTokenJSONPath
+	}
+	if foundation.FileExists(*apiTokenJSONPath) {
+		log.Info().Msgf("Reading credentials from file at path %v...", *apiTokenJSONPath)
+		credentialsFileContent, err := ioutil.ReadFile(*apiTokenJSONPath)
+		if err != nil {
+			log.Fatal().Msgf("Failed reading credential file at path %v.", *apiTokenJSONPath)
+		}
+		err = json.Unmarshal(credentialsFileContent, &credentials)
+		if err != nil {
+			log.Fatal().Err(err).Msg("Failed unmarshalling injected credentials")
+		}
+	} else {
+		log.Fatal().Msg("Credentials of type github-api-token are not injected; configure this extension as trusted and inject credentials of type github-api-token")
 	}
 	if len(credentials) == 0 {
-		log.Fatal().Msg("No credentials have been injected")
+		log.Fatal().Msg("Credentials of type github-api-token are not injected; configure this extension as trusted and inject credentials of type github-api-token")
 	}
 
 	// set defaults
